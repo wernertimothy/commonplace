@@ -12,13 +12,15 @@ import '../text_styles.dart';
 class NoteScreen extends ConsumerStatefulWidget {
   final Note note;
   final String projectName;
-  final String topicName;
+
+  /// Null when the note lives directly in a project (no topic).
+  final String? topicName;
 
   const NoteScreen({
     super.key,
     required this.note,
     required this.projectName,
-    required this.topicName,
+    this.topicName,
   });
 
   @override
@@ -85,11 +87,13 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Breadcrumb: Project / Topic (sans, muted).
+                  // Breadcrumb: "Project" or "Project / Topic" (sans, muted).
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Text(
-                      '${widget.projectName} / ${widget.topicName}',
+                      widget.topicName == null
+                          ? widget.projectName
+                          : '${widget.projectName} / ${widget.topicName}',
                       style: theme.textTheme.labelMedium
                           ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),

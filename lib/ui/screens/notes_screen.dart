@@ -6,8 +6,7 @@ import '../../state/providers.dart';
 import '../../state/repository_provider.dart';
 import '../widgets/add_rename_dialog.dart';
 import '../widgets/detail_header.dart';
-import '../widgets/list_helpers.dart';
-import 'note_screen.dart';
+import '../widgets/note_tile.dart';
 
 /// Topic detail: the topic name, an optional description, then a "Notes"
 /// header above the note list.
@@ -23,7 +22,7 @@ class NotesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notes = ref.watch(notesProvider(topic));
+    final notes = ref.watch(notesProvider(topic.path));
     final description = ref.watch(descriptionProvider(topic.path)).value ?? '';
     final repo = ref.read(noteRepositoryProvider);
 
@@ -48,66 +47,22 @@ class NotesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (items) {
-          return ListView.builder(
-            itemCount: items.length + 1,
-            itemBuilder: (context, i) {
-              if (i == 0) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    header,
-                    if (items.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Text('No notes yet. Tap + to create one.'),
-                      ),
-                  ],
-                );
-              }
-              final note = items[i - 1];
-              return ListTile(
-                title: Text(note.title),
-                onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => NoteScreen(
-                        note: note,
-                        projectName: projectName,
-                        topicName: topic.name,
-                      ),
-                    ),
-                  );
-                  // Title may have changed if the note was renamed.
-                  ref.invalidate(notesProvider(topic));
-                },
-                trailing: PopupMenuButton<String>(
-                  onSelected: (action) async {
-                    if (action == 'rename') {
-                      final name = await showNameDialog(
-                        context,
-                        title: 'Rename note',
-                        initialValue: note.title,
-                      );
-                      if (name != null) {
-                        await repo.renameNote(note, name);
-                        ref.invalidate(notesProvider(topic));
-                      }
-                    } else if (action == 'delete') {
-                      final ok = await confirmDelete(context, note.title);
-                      if (ok) {
-                        await repo.deleteNote(note);
-                        ref.invalidate(notesProvider(topic));
-                      }
-                    }
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'rename', child: Text('Rename')),
-                    PopupMenuItem(value: 'delete', child: Text('Delete')),
-                  ],
+          return ListView(
+            children: [
+              header,
+              if (items.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Text('No notes yet. Tap + to create one.'),
                 ),
-              );
-            },
+              for (final note in items)
+                NoteTile(
+                  note: note,
+                  folderPath: topic.path,
+                  projectName: projectName,
+                  topicName: topic.name,
+                ),
+            ],
           );
         },
       ),
@@ -119,8 +74,8 @@ class NotesScreen extends ConsumerWidget {
             confirmLabel: 'Create',
           );
           if (title != null) {
-            await repo.createNote(topic, title);
-            ref.invalidate(notesProvider(topic));
+            await repo.createNote(topic.path, title);
+            ref.invalidate(notesProvider(topic.path));
           }
         },
         child: const Icon(Icons.add),

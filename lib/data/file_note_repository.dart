@@ -124,8 +124,8 @@ class FileNoteRepository implements NoteRepository {
   // --- Notes --------------------------------------------------------------
 
   @override
-  Future<List<Note>> listNotes(Topic topic) async {
-    final dir = Directory(topic.path);
+  Future<List<Note>> listNotes(String folderPath) async {
+    final dir = Directory(folderPath);
     if (!await dir.exists()) return [];
     final entries = await dir.list().toList();
     final files = entries
@@ -143,9 +143,9 @@ class FileNoteRepository implements NoteRepository {
   }
 
   @override
-  Future<Note> createNote(Topic topic, String title) async {
+  Future<Note> createNote(String folderPath, String title) async {
     final safe = _sanitize(title);
-    final file = File(p.join(topic.path, '$safe.md'));
+    final file = File(p.join(folderPath, '$safe.md'));
     if (!await file.exists()) {
       await file.create(recursive: true);
     }
@@ -163,6 +163,26 @@ class FileNoteRepository implements NoteRepository {
   @override
   Future<void> deleteNote(Note note) async {
     await File(note.path).delete();
+  }
+
+  @override
+  Future<Note> moveNote(Note note, String destFolderPath) async {
+    final name = p.basenameWithoutExtension(note.path);
+    final dest = await _uniqueMdFile(destFolderPath, name);
+    await File(note.path).rename(dest.path);
+    return Note(title: p.basenameWithoutExtension(dest.path), path: dest.path);
+  }
+
+  /// Returns a `.md` file in [folderPath] named [baseName], appending a
+  /// numeric suffix (`name 2`, `name 3`, …) if that name is already taken.
+  Future<File> _uniqueMdFile(String folderPath, String baseName) async {
+    var candidate = File(p.join(folderPath, '$baseName.md'));
+    var n = 2;
+    while (await candidate.exists()) {
+      candidate = File(p.join(folderPath, '$baseName $n.md'));
+      n++;
+    }
+    return candidate;
   }
 
   // --- Note content -------------------------------------------------------

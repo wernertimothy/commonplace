@@ -21,11 +21,17 @@ abstract class NoteRepository {
   Future<Topic> renameTopic(Topic topic, String newName);
   Future<void> deleteTopic(Topic topic);
 
-  // Notes within a topic.
-  Future<List<Note>> listNotes(Topic topic);
-  Future<Note> createNote(Topic topic, String title);
+  // Notes. A note is a `.md` file inside any folder — either a topic folder
+  // or, since topics are optional, directly inside a project folder. Notes are
+  // therefore addressed by their containing folder path.
+  Future<List<Note>> listNotes(String folderPath);
+  Future<Note> createNote(String folderPath, String title);
   Future<Note> renameNote(Note note, String newTitle);
   Future<void> deleteNote(Note note);
+
+  /// Moves a note into [destFolderPath] (a project or topic folder),
+  /// choosing a non-colliding file name if needed. Returns the relocated note.
+  Future<Note> moveNote(Note note, String destFolderPath);
 
   // Note content.
   Future<String> readNote(Note note);

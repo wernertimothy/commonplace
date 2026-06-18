@@ -7,7 +7,9 @@ notes render on GitHub or in VS Code.
 
 ## Features
 
-- **Hierarchy:** Projects contain Topics, Topics contain Notes. One note = one `.md` file.
+- **Hierarchy:** Projects contain Topics and/or Notes; Topics contain Notes. One note =
+  one `.md` file. **Topics are optional** — a note can live directly in a project.
+- **Move notes** between projects and topics at any time.
 - **View ↔ edit:** notes render as formatted Markdown by default and switch to a plain-text
   editor with a single tap.
 - **Optional descriptions** on projects and topics, editable any time.
@@ -19,9 +21,11 @@ notes render on GitHub or in VS Code.
 
 ## Architecture
 
-- **Files as source of truth.** Notes are real folders and `.md` files under the app's private
-  documents directory (`<app>/commonplace/<Project>/<Topic>/<note>.md`). Project/topic
-  descriptions are stored in a hidden `.description.md` per folder.
+- **Files as source of truth.** Notes are real `.md` files under the app's private
+  documents directory — in a topic (`<app>/commonplace/<Project>/<Topic>/<note>.md`) or
+  directly in a project (`<app>/commonplace/<Project>/<note>.md`). Moving a note just
+  relocates the file. Project/topic descriptions are stored in a hidden `.description.md`
+  per folder.
 - **Repository seam.** All storage goes through the `NoteRepository` interface
   (`lib/data/note_repository.dart`), implemented today by `FileNoteRepository`
   (`lib/data/file_note_repository.dart`). This keeps the UI independent of storage, so a synced
