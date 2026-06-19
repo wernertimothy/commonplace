@@ -5,8 +5,8 @@ import '../../state/providers.dart';
 import '../../state/repository_provider.dart';
 import '../widgets/add_rename_dialog.dart';
 import '../widgets/list_helpers.dart';
+import 'project_notes_screen.dart';
 import 'settings_screen.dart';
-import 'topics_screen.dart';
 
 class ProjectsScreen extends ConsumerWidget {
   const ProjectsScreen({super.key});
@@ -18,7 +18,14 @@ class ProjectsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Projects'),
+        title: Text(
+          'Projects',
+          style: Theme.of(context)
+              .textTheme
+              .headlineMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        toolbarHeight: 72,
         actions: [
           IconButton(
             tooltip: 'Settings',
@@ -37,7 +44,7 @@ class ProjectsScreen extends ConsumerWidget {
           if (items.isEmpty) {
             return const EmptyHint(
               icon: Icons.folder_open,
-              message: 'No projects yet.\nTap + to create one.',
+              message: 'No projects yet.\nTap + New Project to create one.',
             );
           }
           return ListView.builder(
@@ -45,11 +52,15 @@ class ProjectsScreen extends ConsumerWidget {
             itemBuilder: (context, i) {
               final project = items[i];
               return ListTile(
-                title: Text(project.name),
+                contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                title: Text(
+                  project.name,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => TopicsScreen(project: project),
+                    builder: (_) => ProjectNotesScreen(project: project),
                   ),
                 ),
                 trailing: PopupMenuButton<String>(
@@ -82,7 +93,7 @@ class ProjectsScreen extends ConsumerWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final details = await showItemDialog(
             context,
@@ -94,7 +105,8 @@ class ProjectsScreen extends ConsumerWidget {
             ref.invalidate(projectsProvider);
           }
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('New Project'),
       ),
     );
   }

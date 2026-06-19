@@ -3,8 +3,9 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/note.dart';
+import '../../state/note_font_provider.dart';
 import '../../state/repository_provider.dart';
-import '../text_styles.dart';
+import '../widgets/code_block.dart';
 
 /// Displays a single note. Defaults to a rendered Markdown view and toggles
 /// into a raw-text editor. Edits are written back to the `.md` file when
@@ -13,14 +14,10 @@ class NoteScreen extends ConsumerStatefulWidget {
   final Note note;
   final String projectName;
 
-  /// Null when the note lives directly in a project (no topic).
-  final String? topicName;
-
   const NoteScreen({
     super.key,
     required this.note,
     required this.projectName,
-    this.topicName,
   });
 
   @override
@@ -69,6 +66,7 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final fontSize = ref.watch(noteFontSizeProvider);
     return PopScope(
       onPopInvokedWithResult: (didPop, _) => _save(),
       child: Scaffold(
@@ -87,13 +85,11 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Breadcrumb: "Project" or "Project / Topic" (sans, muted).
+                  // Breadcrumb: the containing project (sans, muted).
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                     child: Text(
-                      widget.topicName == null
-                          ? widget.projectName
-                          : '${widget.projectName} / ${widget.topicName}',
+                      widget.projectName,
                       style: theme.textTheme.labelMedium
                           ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
@@ -104,8 +100,12 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
                         ? _Editor(
                             controller: _controller,
                             onChanged: () => _dirty = true,
+                            fontSize: fontSize,
                           )
-                        : _Preview(text: _controller.text),
+                        : _Preview(
+                            text: _controller.text,
+                            fontSize: fontSize,
+                          ),
                   ),
                 ],
               ),
@@ -114,12 +114,17 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
   }
 }
 
-/// Raw Markdown text editor (serif body, matching the rendered view).
+/// Raw Markdown text editor (default app font, matching the rendered view).
 class _Editor extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onChanged;
+  final double fontSize;
 
-  const _Editor({required this.controller, required this.onChanged});
+  const _Editor({
+    required this.controller,
+    required this.onChanged,
+    required this.fontSize,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +135,11 @@ class _Editor extends StatelessWidget {
       expands: true,
       textAlignVertical: TextAlignVertical.top,
       autofocus: true,
-      style: serif(context, fontSize: 16, height: 1.5),
+      style: TextStyle(
+        fontSize: fontSize,
+        height: 1.5,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
       decoration: const InputDecoration(
         border: InputBorder.none,
         contentPadding: EdgeInsets.all(16),
@@ -140,11 +149,12 @@ class _Editor extends StatelessWidget {
   }
 }
 
-/// Rendered Markdown view, styled with the Lora serif (Claude-like body).
+/// Rendered Markdown view, styled with the default app font.
 class _Preview extends StatelessWidget {
   final String text;
+  final double fontSize;
 
-  const _Preview({required this.text});
+  const _Preview({required this.text, required this.fontSize});
 
   @override
   Widget build(BuildContext context) {
@@ -158,14 +168,36 @@ class _Preview extends StatelessWidget {
       );
     }
     final theme = Theme.of(context);
-    final loraTheme = theme.copyWith(
-      textTheme: theme.textTheme.apply(fontFamily: 'Lora'),
+    final isDark = theme.brightness == Brightness.dark;
+    // Scale the whole text theme so headings/lists grow with the body text.
+    // Material's default body size is 14, so that's our reference point.
+    final scaled = theme.copyWith(
+      textTheme: theme.textTheme.apply(fontSizeFactor: fontSize / 14.0),
     );
+    // Inline-code highlight: warm in dark mode, soft indigo tint in light mode.
+    final highlightBg =
+        isDark ? const Color(0xFF3A302B) : const Color(0xFFE8EAF6);
+    final highlightFg =
+        isDark ? const Color(0xFFE5895B) : const Color(0xFF3949AB);
     return Markdown(
       data: text,
       selectable: true,
-      padding: const EdgeInsets.all(16),
-      styleSheet: MarkdownStyleSheet.fromTheme(loraTheme),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      styleSheet: MarkdownStyleSheet.fromTheme(scaled).copyWith(
+        // Wider gap between paragraphs and other block elements.
+        blockSpacing: 16,
+        // Blank out the default code box; CodeBlockBuilder draws its own.
+        codeblockDecoration: const BoxDecoration(),
+        // Inline code: monospace at body size, with a flat highlight + colour.
+        code: scaled.textTheme.bodyMedium?.copyWith(
+          fontFamily: 'monospace',
+          backgroundColor: highlightBg,
+          color: highlightFg,
+        ),
+      ),
+      builders: {
+        'pre': CodeBlockBuilder(isDark: isDark, fontSize: fontSize),
+      },
     );
   }
 }

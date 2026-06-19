@@ -9,7 +9,7 @@ import '../screens/note_screen.dart';
 import 'add_rename_dialog.dart';
 import 'list_helpers.dart';
 
-/// A single note row, shared by the project- and topic-detail screens.
+/// A single note row, shown on the project-detail screen.
 /// Handles opening, renaming, deleting and moving the note, refreshing the
 /// list it belongs to ([folderPath]) after each change.
 class NoteTile extends ConsumerWidget {
@@ -17,15 +17,11 @@ class NoteTile extends ConsumerWidget {
   final String folderPath;
   final String projectName;
 
-  /// Null when the note sits directly in a project.
-  final String? topicName;
-
   const NoteTile({
     super.key,
     required this.note,
     required this.folderPath,
     required this.projectName,
-    this.topicName,
   });
 
   @override
@@ -33,6 +29,7 @@ class NoteTile extends ConsumerWidget {
     final repo = ref.read(noteRepositoryProvider);
 
     return ListTile(
+      contentPadding: const EdgeInsets.only(left: 32, right: 16),
       title: Text(note.title),
       onTap: () async {
         await Navigator.push(
@@ -41,7 +38,6 @@ class NoteTile extends ConsumerWidget {
             builder: (_) => NoteScreen(
               note: note,
               projectName: projectName,
-              topicName: topicName,
             ),
           ),
         );

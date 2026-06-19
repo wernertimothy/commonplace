@@ -1,4 +1,4 @@
-/// A project is a top-level folder containing topics.
+/// A project is a top-level folder containing notes.
 class Project {
   /// Display name (the folder name on disk).
   final String name;

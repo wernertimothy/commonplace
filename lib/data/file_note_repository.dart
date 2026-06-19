@@ -5,17 +5,16 @@ import 'package:path_provider/path_provider.dart';
 
 import '../models/note.dart';
 import '../models/project.dart';
-import '../models/topic.dart';
 import 'note_repository.dart';
 
-/// Reserved file name holding a project/topic's optional description.
+/// Reserved file name holding a project's optional description.
 /// Hidden (dot-prefixed) and excluded from note listings.
 const kDescriptionFile = '.description.md';
 
 /// Stores the note tree as real folders and `.md` files under the app's
 /// documents directory:
 ///
-///   `<documents>/commonplace/<Project>/<Topic>/<note>.md`
+///   `<documents>/commonplace/<Project>/<note>.md`
 class FileNoteRepository implements NoteRepository {
   Directory? _root;
 
@@ -86,39 +85,6 @@ class FileNoteRepository implements NoteRepository {
   @override
   Future<void> deleteProject(Project project) async {
     await Directory(project.path).delete(recursive: true);
-  }
-
-  // --- Topics -------------------------------------------------------------
-
-  @override
-  Future<List<Topic>> listTopics(Project project) async {
-    final dirs = await _listDirs(Directory(project.path));
-    return dirs
-        .map((d) => Topic(name: p.basename(d.path), path: d.path))
-        .toList();
-  }
-
-  @override
-  Future<Topic> createTopic(Project project, String name,
-      {String? description}) async {
-    final safe = _sanitize(name);
-    final dir = Directory(p.join(project.path, safe));
-    await dir.create(recursive: true);
-    await _writeDescriptionIfPresent(dir.path, description);
-    return Topic(name: safe, path: dir.path);
-  }
-
-  @override
-  Future<Topic> renameTopic(Topic topic, String newName) async {
-    final safe = _sanitize(newName);
-    final newPath = p.join(p.dirname(topic.path), safe);
-    await Directory(topic.path).rename(newPath);
-    return Topic(name: safe, path: newPath);
-  }
-
-  @override
-  Future<void> deleteTopic(Topic topic) async {
-    await Directory(topic.path).delete(recursive: true);
   }
 
   // --- Notes --------------------------------------------------------------

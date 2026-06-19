@@ -1,4 +1,4 @@
-/// A note is a single `.md` file inside a topic.
+/// A note is a single `.md` file inside a project.
 class Note {
   /// Display title (the file name without the `.md` extension).
   final String title;

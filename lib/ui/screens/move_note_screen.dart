@@ -4,16 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/note.dart';
 import '../../state/repository_provider.dart';
 
-/// A place a note can be moved to: a project folder, or a topic folder.
+/// A place a note can be moved to: a project folder.
 class _Destination {
-  final String label; // "Project" or "Project / Topic"
+  final String label; // project name
   final String path; // destination folder path
-  final bool isTopic;
 
-  const _Destination(this.label, this.path, {this.isTopic = false});
+  const _Destination(this.label, this.path);
 }
 
-/// Picker that lists every project and its topics as move destinations.
+/// Picker that lists every project as a move destination.
 /// Pops with the chosen destination folder path (String), or null if cancelled.
 class MoveNoteScreen extends ConsumerStatefulWidget {
   final Note note;
@@ -39,10 +38,6 @@ class _MoveNoteScreenState extends ConsumerState<MoveNoteScreen> {
     final dests = <_Destination>[];
     for (final project in await repo.listProjects()) {
       dests.add(_Destination(project.name, project.path));
-      for (final topic in await repo.listTopics(project)) {
-        dests.add(_Destination('${project.name} / ${topic.name}', topic.path,
-            isTopic: true));
-      }
     }
     // Don't offer the note's current location.
     dests.removeWhere((d) => d.path == currentFolder);
@@ -68,7 +63,7 @@ class _MoveNoteScreenState extends ConsumerState<MoveNoteScreen> {
                     padding: EdgeInsets.all(24),
                     child: Text(
                       'Nowhere else to move this note yet.\n'
-                      'Create another project or topic first.',
+                      'Create another project first.',
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -78,10 +73,6 @@ class _MoveNoteScreenState extends ConsumerState<MoveNoteScreen> {
                   itemBuilder: (context, i) {
                     final d = dests[i];
                     return ListTile(
-                      contentPadding: EdgeInsets.only(
-                        left: d.isTopic ? 40 : 16,
-                        right: 16,
-                      ),
                       title: Text(d.label),
                       onTap: () => Navigator.pop(context, d.path),
                     );

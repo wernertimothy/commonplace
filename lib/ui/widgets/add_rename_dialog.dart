@@ -51,7 +51,7 @@ class ItemDetails {
 }
 
 /// Dialog with a required name field and an optional multiline description.
-/// Used to create projects & topics. Returns null if cancelled / name empty.
+/// Used to create projects. Returns null if cancelled / name empty.
 Future<ItemDetails?> showItemDialog(
   BuildContext context, {
   required String title,
